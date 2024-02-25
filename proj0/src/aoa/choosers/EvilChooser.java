@@ -1,7 +1,7 @@
 package aoa.choosers;
 
-import java.util.List;
-import edu.princeton.cs.algs4.StdRandom;
+import java.util.*;
+
 import aoa.utils.FileUtils;
 
 public class EvilChooser implements Chooser {
@@ -9,24 +9,67 @@ public class EvilChooser implements Chooser {
     private List<String> wordPool;
 
     public EvilChooser(int wordLength, String dictionaryFile) {
-        // TODO: Fill in this constructor.
+        if (wordLength > 1) {
+            wordPool = FileUtils.readWordsOfLength(dictionaryFile, wordLength);
+            if (wordPool.isEmpty()) {
+                throw new IllegalStateException("No words of the specified length found.");
+            } else {
+                pattern = "-".repeat(wordLength);
+            }
+        } else {
+            throw new IllegalArgumentException("Word length should be greater than 1.");
+        }
     }
 
     @Override
     public int makeGuess(char letter) {
-        // TODO: Fill in this method.
-        return 0;
+        TreeMap<String, List<String>> groupMap = new TreeMap<>();
+        for (String word : wordPool) {
+            char[] patternArray = pattern.toCharArray();
+            for (int i = 0; i < word.length(); i++) {
+                if (patternArray[i] == '-') {
+                    if (word.charAt(i) != letter) {
+                        patternArray[i] = '-';
+                    } else {
+                        patternArray[i] = letter;
+                    }
+                }
+            }
+            String patternString = String.valueOf(patternArray);
+            if (groupMap.containsKey(patternString)) {
+                groupMap.get(patternString).add(word);
+            } else {
+                List<String> newSet = new ArrayList<>();
+                newSet.add(word);
+                groupMap.put(patternString, newSet);
+            }
+        }
+
+        pattern = groupMap.entrySet()
+                .stream()
+                .max(Comparator.comparingInt(e -> e.getValue().size()))
+                .map(Map.Entry::getKey)
+                .get();
+
+        wordPool = groupMap.get(pattern);
+
+        int count = 0;
+        for (char c : pattern.toCharArray()) {
+            if (c == letter) {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     @Override
     public String getPattern() {
-        // TODO: Fill in this method.
-        return "";
+        return pattern;
     }
 
     @Override
     public String getWord() {
-        // TODO: Fill in this method.
-        return "";
+        return wordPool.get(0);
     }
 }
